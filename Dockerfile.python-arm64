@@ -1,7 +1,84 @@
+# Dockerfile per cross-compilare Python 3.10 con dipendenze per ARM64
+# Questo Dockerfile crea un archivio tar.gz pronto per Yocto
+
+FROM --platform=linux/arm64 debian:bookworm-slim AS builder
+
+ARG PYTHON_VERSION=3.10.13
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Installa dipendenze di build
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libssl-dev \
+    libffi-dev \
+    libncurses-dev \
+    zlib1g-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    wget \
+    ca-certificates \
+    pkg-config \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Crea directory di install
+WORKDIR /build
+RUN mkdir -p /opt/python-arm64
+
+# Download Python
+RUN wget -q https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tar.xz && \
+    tar -xf Python-${PYTHON_VERSION}.tar.xz && \
+    rm Python-${PYTHON_VERSION}.tar.xz
+
+# Compila Python
+WORKDIR /build/Python-${PYTHON_VERSION}
+RUN ./configure \
+    --prefix=/opt/python-arm64 \
+    --enable-optimizations \
+    --enable-shared \
+    --with-system-ffi \
+    && make -j$(nproc) \
+    && make install
+
+# Installa pip e setuptools
+RUN /opt/python-arm64/bin/python3 -m pip install --upgrade \
+    pip \
+    setuptools \
+    wheel
+
+# Installa dipendenze di sistema per i package Python
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libatlas-base-dev \
+    libjasper-dev \
+    libtiff-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libharfbuzz0 \
+    libwebp6 \
+    libtiff5 \
+    libilmbase23 \
+    libopenexr23 \
+    libgstreamer1.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Installa i package Python richiesti
 RUN /opt/python-arm64/bin/pip install --no-cache-dir \
     numpy \
     opencv-python \
     mss \
-    pynput \
-    pillow \           # Aggiungi qui
-    requests \
+    pynput
+
+# Verifica che venv sia disponibile
+RUN /opt/python-arm64/bin/python3 -m venv /tmp/test_venv && \
+    rm -rf /tmp/test_venv
+
+# Compatta tutto in un archivio
+WORKDIR /opt
+RUN tar --owner=0 --group=0 \
+    -czf /tmp/python-arm64.tar.gz \
+    python-arm64/
+
+# Stage finale per output
+FROM scratch
+COPY --from=builder /tmp/python-arm64.tar.gz /app/python-arm64.tar.gz
