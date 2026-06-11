@@ -1,0 +1,91 @@
+name: Build Python 3.10 ARM64 Archive
+
+on:
+  push:
+    branches: [ main, develop ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      python_version:
+        description: 'Python version (e.g., 3.10.13)'
+        required: false
+        default: '3.10.13'
+
+jobs:
+  build-python-arm64:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set Python version
+        run: |
+          if [ "${{ github.event.inputs.python_version }}" != "" ]; then
+            echo "PYTHON_VERSION=${{ github.event.inputs.python_version }}" >> $GITHUB_ENV
+          else
+            echo "PYTHON_VERSION=3.10.13" >> $GITHUB_ENV
+          fi
+      
+      - name: Set up QEMU for ARM64
+        uses: docker/setup-qemu-action@v3
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build Python ARM64 Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.python-arm64
+          platforms: linux/arm64
+          push: false
+          outputs: type=docker,dest=/tmp/python-arm64-image.tar
+          build-args: |
+            PYTHON_VERSION=${{ env.PYTHON_VERSION }}
+      
+      - name: Load Docker image and extract archive
+        run: |
+          docker load --input /tmp/python-arm64-image.tar
+          IMAGE_ID=$(docker images --quiet | head -1)
+          
+          # Crea contenitore e copia l'archivio
+          CONTAINER_ID=$(docker create $IMAGE_ID)
+          docker cp $CONTAINER_ID:/app/python-arm64.tar.gz /tmp/python-arm64.tar.gz
+          docker rm $CONTAINER_ID
+          
+          # Verifica contenuto
+          echo "Archive contents (first 20 entries):"
+          tar -tzf /tmp/python-arm64.tar.gz | head -20
+          
+          # Mostra dimensione
+          ls -lh /tmp/python-arm64.tar.gz
+      
+      - name: Upload archive as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-${{ env.PYTHON_VERSION }}-arm64
+          path: /tmp/python-arm64.tar.gz
+          retention-days: 30
+      
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: /tmp/python-arm64.tar.gz
+          draft: false
+          prerelease: false
+          body: |
+            Python ${{ env.PYTHON_VERSION }} ARM64 (aarch64) build with:
+            - pip
+            - venv
+            - numpy
+            - opencv-python
+            - mss
+            - pynput
+            
+            Extract with: `tar -xzf python-arm64.tar.gz -C /opt/`
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,36 @@
+# Build artifacts
+*.tar.gz
+*.tar
+*.zip
+dist/
+build/
+*.egg-info/
+
+# Docker
+docker-image.tar
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary
+tmp/
+temp/
+.tmp/

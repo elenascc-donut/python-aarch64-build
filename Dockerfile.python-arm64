@@ -1,0 +1,7 @@
+RUN /opt/python-arm64/bin/pip install --no-cache-dir \
+    numpy \
+    opencv-python \
+    mss \
+    pynput \
+    pillow \           # Aggiungi qui
+    requests \
