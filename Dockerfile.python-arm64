@@ -35,11 +35,26 @@ RUN wget -q https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_
 WORKDIR /build/Python-${PYTHON_VERSION}
 RUN ./configure \
     --prefix=/opt/python-arm64 \
-    --enable-optimizations \
     --enable-shared \
     --with-system-ffi \
     && make -j$(nproc) \
     && make install
+
+# resolve: exit code 127
+RUN ls -l /opt/python-arm64/bin
+
+RUN ldd /opt/python-arm64/bin/python3 || true
+
+RUN LD_LIBRARY_PATH=/opt/python-arm64/lib \
+    /opt/python-arm64/bin/python3 --version
+
+RUN echo "/opt/python-arm64/lib" > /etc/ld.so.conf.d/python-arm64.conf && \
+    ldconfig
+
+RUN /opt/python-arm64/bin/python3 --version	
+RUN /opt/python-arm64/bin/python3 -m ensurepip
+RUN /opt/python-arm64/bin/python3 -m pip --version
+
 
 # Installa pip e setuptools
 RUN /opt/python-arm64/bin/python3 -m pip install --upgrade \
