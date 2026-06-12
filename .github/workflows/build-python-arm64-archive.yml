@@ -49,7 +49,7 @@ jobs:
       - name: Load Docker image and extract archive
         run: |
           docker load --input /tmp/python-arm64-image.tar
-          IMAGE_ID=$(docker images --quiet | head -1)
+          IMAGE_ID=$(docker images --format "{{.ID}}" | head -1)
           
           # Crea contenitore e copia l'archivio
           CONTAINER_ID=$(docker create $IMAGE_ID)

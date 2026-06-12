@@ -95,5 +95,12 @@ RUN tar --owner=0 --group=0 \
     python-arm64/
 
 # Stage finale per output
-FROM scratch
+#FROM scratch
+#COPY --from=builder /tmp/python-arm64.tar.gz /app/python-arm64.tar.gz
+
+FROM alpine:3.22
+
 COPY --from=builder /tmp/python-arm64.tar.gz /app/python-arm64.tar.gz
+
+# At the end of your Dockerfile
+CMD ["/bin/bash"]
