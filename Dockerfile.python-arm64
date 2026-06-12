@@ -63,19 +63,19 @@ RUN /opt/python-arm64/bin/python3 -m pip install --upgrade \
     wheel
 
 # Installa dipendenze di sistema per i package Python
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libatlas-base-dev \
-    libjasper-dev \
-    libtiff-dev \
-    libjpeg-dev \
-    libpng-dev \
-    libharfbuzz0 \
-    libwebp6 \
-    libtiff5 \
-    libilmbase23 \
-    libopenexr23 \
-    libgstreamer1.0-0 \
-    && rm -rf /var/lib/apt/lists/*
+#RUN apt-get update && apt-get install -y --no-install-recommends \
+#    libatlas-base-dev \
+#    libjasper-dev \
+#    libtiff-dev \
+#    libjpeg-dev \
+#    libpng-dev \
+#    libharfbuzz0 \
+#    libwebp6 \
+#    libtiff5 \
+#    libilmbase23 \
+#    libopenexr23 \
+#    libgstreamer1.0-0 \
+#    && rm -rf /var/lib/apt/lists/*
 
 # Installa i package Python richiesti
 RUN /opt/python-arm64/bin/pip install --no-cache-dir \
